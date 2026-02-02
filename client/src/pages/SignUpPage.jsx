@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 
-export function LoginPage() {
+export function SignUpPage() {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
+        name: '',
         email: '',
-        password: ''
+        password: '',
+        confirmPassword: ''
     });
     const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -21,29 +24,43 @@ export function LoginPage() {
         if (error) setError('');
     };
 
-    const handleGoogleSignIn = () => {
+    const handleGoogleSignUp = () => {
         // TODO: Implement Google OAuth
-        console.log('Google sign in clicked');
-        // For now, simulate login
+        console.log('Google sign up clicked');
+        // For now, simulate signup
         localStorage.setItem('isAuthenticated', 'true');
         navigate('/');
     };
 
+    const validateForm = () => {
+        if (formData.password !== formData.confirmPassword) {
+            setError('Passwords do not match');
+            return false;
+        }
+        if (formData.password.length < 6) {
+            setError('Password must be at least 6 characters long');
+            return false;
+        }
+        return true;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!validateForm()) return;
+
         setIsLoading(true);
         setError('');
 
         try {
-            // TODO: Implement actual login API call
-            // For now, simulate login
+            // TODO: Implement actual signup API call
+            // For now, simulate signup
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // Mock successful login
+            // Mock successful signup
             localStorage.setItem('isAuthenticated', 'true');
             navigate('/');
         } catch {
-            setError('Invalid email or password');
+            setError('Failed to create account. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -67,16 +84,16 @@ export function LoginPage() {
             <div className="w-full max-w-md">
                 {/* Logo/Brand */}
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-slate-800 mb-2">Login</h1>
-                    <p className="text-slate-600">Sign in to your account</p>
+                    <h1 className="text-3xl font-bold text-slate-800 mb-2">Sign Up</h1>
+                    <p className="text-slate-600">Create your account</p>
                 </div>
 
-                {/* Login Form */}
+                {/* Sign Up Form */}
                 <div className="bg-white rounded-xl shadow-lg p-8">
-                    {/* Google Sign In Button */}
+                    {/* Google Sign Up Button */}
                     <div className="mb-6">
                         <button
-                            onClick={handleGoogleSignIn}
+                            onClick={handleGoogleSignUp}
                             className="w-full flex items-center justify-center gap-3 bg-white border border-slate-300 rounded-lg py-3 px-4 hover:bg-slate-50 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                         >
                             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -95,11 +112,31 @@ export function LoginPage() {
                             <div className="w-full border-t border-slate-300"></div>
                         </div>
                         <div className="relative flex justify-center text-sm">
-                            <span className="px-2 bg-white text-slate-500">Or continue with email</span>
+                            <span className="px-2 bg-white text-slate-500">Or create account with email</span>
                         </div>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Name Field */}
+                        <div>
+                            <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-2">
+                                Full Name
+                            </label>
+                            <div className="relative">
+                                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
+                                <input
+                                    type="text"
+                                    id="name"
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleInputChange}
+                                    required
+                                    className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                    placeholder="Enter your full name"
+                                />
+                            </div>
+                        </div>
+
                         {/* Email Field */}
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
@@ -135,7 +172,7 @@ export function LoginPage() {
                                     onChange={handleInputChange}
                                     required
                                     className="w-full pl-10 pr-12 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                                    placeholder="Enter your password"
+                                    placeholder="Create a password"
                                 />
                                 <button
                                     type="button"
@@ -143,6 +180,33 @@ export function LoginPage() {
                                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
                                 >
                                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Confirm Password Field */}
+                        <div>
+                            <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 mb-2">
+                                Confirm Password
+                            </label>
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
+                                <input
+                                    type={showConfirmPassword ? 'text' : 'password'}
+                                    id="confirmPassword"
+                                    name="confirmPassword"
+                                    value={formData.confirmPassword}
+                                    onChange={handleInputChange}
+                                    required
+                                    className="w-full pl-10 pr-12 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                    placeholder="Confirm your password"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                >
+                                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                 </button>
                             </div>
                         </div>
@@ -160,19 +224,16 @@ export function LoginPage() {
                             disabled={isLoading}
                             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-3 px-4 rounded-lg transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                         >
-                            {isLoading ? 'Signing in...' : 'Sign In'}
+                            {isLoading ? 'Creating account...' : 'Create Account'}
                         </button>
                     </form>
 
                     {/* Additional Links */}
                     <div className="mt-6 text-center space-y-2">
-                        <a href="#" className="text-sm text-blue-600 hover:text-blue-800 transition-colors">
-                            Forgot your password?
-                        </a>
                         <div className="text-sm text-slate-600">
-                            Don't have an account?{' '}
-                            <a href="/signup" className="text-blue-600 hover:text-blue-800 transition-colors font-medium">
-                                Sign up
+                            Already have an account?{' '}
+                            <a href="/login" className="text-blue-600 hover:text-blue-800 transition-colors font-medium">
+                                Sign in
                             </a>
                         </div>
                     </div>
