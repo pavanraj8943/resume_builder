@@ -1,18 +1,45 @@
 // API service for making HTTP requests
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
+const handleResponse = async (response) => {
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.indexOf("application/json") !== -1) {
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'API Error');
+    }
+    return data;
+  }
+  // Handle non-JSON response
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
+  }
+  return response.text();
+};
+
 export const api = {
-  // TODO: Implement API methods
-  get: (endpoint) => fetch(`${API_BASE_URL}${endpoint}`).then(res => res.json()),
+  get: (endpoint) => fetch(`${API_BASE_URL}${endpoint}`, {
+    credentials: 'include'
+  }).then(handleResponse),
   post: (endpoint, data) => fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  }).then(res => res.json()),
+    body: JSON.stringify(data),
+    credentials: 'include'
+  }).then(handleResponse),
   put: (endpoint, data) => fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  }).then(res => res.json()),
-  delete: (endpoint) => fetch(`${API_BASE_URL}${endpoint}`, { method: 'DELETE' }).then(res => res.json())
+    body: JSON.stringify(data),
+    credentials: 'include'
+  }).then(handleResponse),
+  delete: (endpoint) => fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'DELETE',
+    credentials: 'include'
+  }).then(handleResponse),
+  upload: (endpoint, formData) => fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'POST',
+    body: formData,
+    credentials: 'include'
+  }).then(handleResponse)
 };

@@ -33,6 +33,25 @@ export const UserProvider = ({ children }) => {
     }
   };
 
+  const googleLogin = async (tokenId) => {
+    const res = await fetch('/api/auth/google', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ tokenId })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      setUser(data.user);
+      setIsAuthenticated(true);
+      return { success: true };
+    } else {
+      return { success: false, error: data.message };
+    }
+  };
+
   const login = async (email, password) => {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
@@ -84,7 +103,7 @@ export const UserProvider = ({ children }) => {
   };
 
   return (
-    <UserContext.Provider value={{ user, setUser, isAuthenticated, setIsAuthenticated, login, register, logout, loading }}>
+    <UserContext.Provider value={{ user, setUser, isAuthenticated, setIsAuthenticated, login, register, logout, loading, googleLogin }}>
       {children}
     </UserContext.Provider>
   );

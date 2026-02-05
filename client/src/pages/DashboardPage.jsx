@@ -1,18 +1,24 @@
 import React, { useState } from 'react';
+import { api } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { useUserContext } from '../context/UserContext';
 import { ResumeUpload } from '../components/resume/ResumeUpload';
 import { ResumeParsing } from '../components/resume/ResumeParsing';
 import { ResumePreview } from '../components/resume/ResumePreview';
 import { ChatInterface } from '../components/Chat/ChatInterface';
-import { BarChart3, TrendingUp, CheckCircle2 } from 'lucide-react';
+import { BarChart3, TrendingUp, CheckCircle2, LogOut } from 'lucide-react';
 
 export function DashboardPage() {
     const navigate = useNavigate();
-    const { user } = useUserContext();
+    const { user, logout } = useUserContext();
     const [uploadedFile, setUploadedFile] = useState(null);
     const [isParsing, setIsParsing] = useState(false);
     const [parsedData, setParsedData] = useState(null);
+
+    const handleLogout = async () => {
+        await logout();
+        navigate('/login');
+    };
 
     const handleFileUpload = async (file) => {
         setUploadedFile(file);
@@ -23,24 +29,22 @@ export function DashboardPage() {
         formData.append('resume', file);
 
         try {
-            // Note: Authorization header not needed if using cookies
-            const res = await fetch('/api/resume/upload', {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await res.json();
-
-            if (res.ok) {
+            const data = await api.upload('/resume/upload', formData);
+            if (data.success && data.data?.parsed) {
                 setParsedData(data.data.parsed);
-            } else {
-                console.error('Upload failed:', data.message);
-                setIsParsing(false);
             }
         } catch (error) {
             console.error('Error uploading resume:', error);
-            setIsParsing(false);
+            setIsParsing(false); // Stop parsing on error
+            setUploadedFile(null); // Reset file on error
+            // Ideally show a toast here
         }
+    };
+
+    const handleDeleteResume = () => {
+        setUploadedFile(null);
+        setParsedData(null);
+        setIsParsing(false);
     };
 
     const handleParsingComplete = () => {
@@ -52,12 +56,15 @@ export function DashboardPage() {
             {/* Welcome Section */}
             <div className="flex items-end justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800 transition-colors">Good Morning, {user?.name || 'User'}!</h1>
+                    <h1 className="text-2xl font-bold text-slate-800 transition-colors">Hello, {user?.name || 'User'}!</h1>
                     <p className="text-slate-500 mt-1 transition-colors">Ready to ace your next interview? Here's your progress.</p>
                 </div>
-                <div className="hidden sm:flex items-center gap-2 text-sm font-medium text-slate-600 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm transition-colors">
-                    <span>Target Role:</span>
-                    <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Senior Frontend Engineer</span>
+                <div className="flex items-center gap-4">
+                    <div className="hidden sm:flex items-center gap-2 text-sm font-medium text-slate-600 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm transition-colors">
+                        <span>Target Role:</span>
+                        <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{user?.targetRole || 'Not Set'}</span>
+                    </div>
+
                 </div>
             </div>
 
@@ -85,16 +92,20 @@ export function DashboardPage() {
                 ))}
             </div>
 
-            {/* Main Content Grid */}
+        
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-                {/* Left Column: Context & Upload */}
+             
                 <div className="space-y-6 lg:col-span-1">
                     {!uploadedFile ? (
                         <ResumeUpload onFileUpload={handleFileUpload} />
                     ) : isParsing ? (
                         <ResumeParsing onComplete={handleParsingComplete} />
                     ) : (
-                        <ResumePreview file={uploadedFile} data={parsedData} />
+                        <ResumePreview
+                            file={uploadedFile}
+                            data={parsedData}
+                            onDelete={handleDeleteResume}
+                        />
                     )}
 
                     <div className="bg-blue-600 rounded-xl p-6 text-white relative overflow-hidden shadow-lg shadow-blue-500/20">

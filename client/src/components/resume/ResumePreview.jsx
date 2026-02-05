@@ -1,17 +1,34 @@
 import React from 'react';
-import { FileText, Mail, Phone, Award } from 'lucide-react';
+import { FileText, Mail, Phone, Award, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-export function ResumePreview({ file }) {
+export function ResumePreview({ file, data, onDelete }) {
+    const navigate = useNavigate();
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-150">
+        <div
+            onClick={() => navigate('/interview')}
+            className="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-150 cursor-pointer hover:shadow-md transition-all group/card"
+        >
             <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                 <h3 className="font-semibold text-slate-800 flex items-center gap-2">
                     <FileText className="w-4 h-4 text-blue-500" />
                     Resume Preview
                 </h3>
-                <span className="text-xs font-medium px-2 py-1 bg-green-50 text-green-600 rounded">
-                    Analysis Complete
-                </span>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete?.();
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all"
+                        title="Delete Resume"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                    <span className="text-xs font-medium px-2 py-1 bg-green-50 text-green-600 rounded">
+                        Analysis Complete
+                    </span>
+                </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-6">

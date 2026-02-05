@@ -9,7 +9,7 @@ export function ResumeParsing({ onComplete }) {
             setProgress(prev => {
                 if (prev >= 100) {
                     clearInterval(interval);
-                    setTimeout(onComplete, 800); // Wait a bit before completing
+                    setTimeout(onComplete, 800); 
                     return 100;
                 }
                 const increment = Math.random() * 10;
@@ -28,7 +28,7 @@ export function ResumeParsing({ onComplete }) {
     else step = 'Finalizing...';
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 flex flex-col items-center justify-center min-h-100">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 flex flex-col items-center justify-center min-h-[400px]">
             <div className="relative mb-6">
                 <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center">
                     <FileText className="w-10 h-10 text-blue-600" />

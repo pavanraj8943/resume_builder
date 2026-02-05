@@ -7,25 +7,32 @@ import { InterviewPage } from './pages/InterviewPage';
 import { Routes, Route } from 'react-router-dom';
 import { UserProvider } from './context/UserContext';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+
+import { ChatProvider } from './context/ChatContext';
 
 function App() {
 
     return (
         <UserProvider>
-            <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/signup" element={<SignUpPage />} />
-                <Route path="/*" element={
-                    <ProtectedRoute>
-                        <Layout>
-                            <Routes>
-                                <Route path="/" element={<DashboardPage />} />
-                                <Route path="/interview" element={<InterviewPage />} />
-                            </Routes>
-                        </Layout>
-                    </ProtectedRoute>
-                } />
-            </Routes>
+            <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+                <Routes>
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/signup" element={<SignUpPage />} />
+                    <Route path="/*" element={
+                        <ProtectedRoute>
+                            <ChatProvider>
+                                <Layout>
+                                    <Routes>
+                                        <Route path="/" element={<DashboardPage />} />
+                                        <Route path="/interview" element={<InterviewPage />} />
+                                    </Routes>
+                                </Layout>
+                            </ChatProvider>
+                        </ProtectedRoute>
+                    } />
+                </Routes>
+            </GoogleOAuthProvider>
         </UserProvider>
     );
 }

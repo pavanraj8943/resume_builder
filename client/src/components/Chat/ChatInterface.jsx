@@ -1,29 +1,28 @@
-import React, { useState } from 'react';
-import { Send, Bot, User, Sparkles, Maximize2, Minimize2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Send, Bot, User, Sparkles, Maximize2, Minimize2, Loader } from 'lucide-react';
+import { useChatContext } from '../../context/ChatContext';
 
 export function ChatInterface() {
-    const [messages, setMessages] = useState([
-        { id: 1, role: 'assistant', content: "Hello! I'm your Navigate Assistant. Upload your resume to get started, or ask me any general interview questions." }
-    ]);
+    const { messages, isLoading, error, sendMessage, clearMessages } = useChatContext();
     const [input, setInput] = useState('');
     const [isFullScreen, setIsFullScreen] = useState(false);
+    const messagesEndRef = useRef(null);
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
 
     const toggleFullScreen = () => setIsFullScreen(!isFullScreen);
 
-    const handleSend = () => {
-        if (!input.trim()) return;
-        const newMessage = { id: Date.now(), role: 'user', content: input };
-        setMessages([...messages, newMessage]);
+    const handleSend = async () => {
+        if (!input.trim() || isLoading) return;
+        const msg = input;
         setInput('');
-
-        // Simulate AI response for now
-        setTimeout(() => {
-            setMessages(prev => [...prev, {
-                id: Date.now() + 1,
-                role: 'assistant',
-                content: "I'm still learning! Once the backend is connected, I'll be able to give meaningful feedback."
-            }]);
-        }, 1000);
+        await sendMessage(msg);
     };
 
     return (
@@ -37,8 +36,10 @@ export function ChatInterface() {
                     <div>
                         <h3 className="font-semibold text-slate-800">Navigate Assistant</h3>
                         <div className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                            <span className="text-xs text-slate-500 font-medium">Online</span>
+                            <span className={`w-2 h-2 rounded-full animate-pulse ${isLoading ? 'bg-yellow-400' : 'bg-green-500'}`}></span>
+                            <span className="text-xs text-slate-500 font-medium">
+                                {isLoading ? 'Thinking...' : 'Online'}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -50,7 +51,10 @@ export function ChatInterface() {
                     >
                         {isFullScreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
                     </button>
-                    <button className="text-xs font-medium text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full hover:bg-indigo-100 transition-colors flex items-center gap-1">
+                    <button
+                        onClick={clearMessages}
+                        className="text-xs font-medium text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full hover:bg-indigo-100 transition-colors flex items-center gap-1"
+                    >
                         <Sparkles className="w-3 h-3" />
                         New Session
                     </button>
@@ -79,6 +83,28 @@ export function ChatInterface() {
                         </div>
                     </div>
                 ))}
+
+                {isLoading && (
+                    <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full bg-white border border-slate-200 text-indigo-600 flex items-center justify-center shrink-0">
+                            <Bot className="w-4 h-4" />
+                        </div>
+                        <div className="bg-white border border-slate-200 text-slate-500 px-4 py-3 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-2">
+                            <Loader className="w-4 h-4 animate-spin" />
+                            <span className="text-xs">Generating response...</span>
+                        </div>
+                    </div>
+                )}
+
+                {error && (
+                    <div className="text-center p-2">
+                        <span className="text-xs text-red-500 bg-red-50 px-3 py-1 rounded-full border border-red-100">
+                            {error}
+                        </span>
+                    </div>
+                )}
+
+                <div ref={messagesEndRef} />
             </div>
 
             {/* Input Area */}
@@ -90,14 +116,15 @@ export function ChatInterface() {
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                         placeholder="Type your message..."
-                        className="w-full pl-4 pr-12 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all text-sm"
+                        disabled={isLoading}
+                        className="w-full pl-4 pr-12 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                     <button
                         onClick={handleSend}
-                        disabled={!input.trim()}
+                        disabled={!input.trim() || isLoading}
                         className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-blue-500/20"
                     >
-                        <Send className="w-4 h-4" />
+                        {isLoading ? <Loader className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                     </button>
                 </div>
                 <p className="text-[10px] text-center text-slate-400 mt-2">
