@@ -6,7 +6,7 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Generate JWT Token
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'secret', {
+  return jwt.sign({ id }, process.env.JWT_SECRET || '6b357cb5d896be3caeceacda00c36739d90b4ed5fbb2ad451b48c34b8a6b5bcb', {
     expiresIn: '30d'
   });
 };
@@ -31,7 +31,7 @@ exports.register = async (req, res) => {
       password
     });
 
-    sendTokenResponse(user, 201, res);
+    res.status(201).json({ success: true, message: 'Registration successful. Please log in.' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server Error' });
@@ -72,6 +72,33 @@ exports.login = async (req, res) => {
   }
 };
 
+// @desc    Update user details
+// @route   PUT /api/auth/me
+// @access  Private
+exports.updateMe = async (req, res) => {
+  try {
+    const { name, email, targetRole } = req.body;
+
+    const fieldsToUpdate = {};
+    if (name) fieldsToUpdate.name = name;
+    if (email) fieldsToUpdate.email = email;
+    if (targetRole) fieldsToUpdate.targetRole = targetRole;
+
+    const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {
+      new: true,
+      runValidators: true
+    });
+
+    res.status(200).json({
+      success: true,
+      data: user
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
 // @desc    Get current user
 // @route   GET /api/auth/me
 // @access  Private
@@ -93,7 +120,7 @@ const sendTokenResponse = (user, statusCode, res) => {
   const token = generateToken(user._id);
 
   const options = {
-    expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+    expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     httpOnly: true
   };
 

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../services/api';
 
 const ChatContext = createContext();
@@ -7,9 +7,9 @@ const ChatContext = createContext();
 export const useChatContext = () => useContext(ChatContext);
 
 export const ChatProvider = ({ children }) => {
+  /* eslint-disable react-hooks/exhaustive-deps */
   const [messages, setMessages] = useState([
     {
-      id: 1,
       role: 'assistant',
       content: "Hello! I'm your Navigate Assistant. Upload your resume to get started, or ask me any general interview questions."
     }
@@ -17,51 +17,65 @@ export const ChatProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const fetchHistory = async () => {
+    try {
+      const response = await api.get('/chat/history');
+      if (response && Array.isArray(response.data) && response.data.length > 0) {
+        setMessages(response.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch chat history:', err);
+    }
+  };
+
   const sendMessage = async (content) => {
     setIsLoading(true);
     setError(null);
 
     // Optimistic update
-    const userMessage = { id: Date.now(), role: 'user', content };
+    // Note: We use a temp ID or just rely on index. The backend uses 'role' and 'content'.
+    const userMessage = { role: 'user', content, timestamp: new Date() };
     setMessages(prev => [...prev, userMessage]);
 
     try {
-      // Prepare message history for context (last 10 messages)
-      // Filter out ID and just keep role/content for the API
-      const history = messages.concat(userMessage).slice(-10).map(m => ({
-        role: m.role,
-        content: m.content
-      }));
-
-      const response = await api.post('/chat', { messages: history });
+      // Send only the new message content
+      const response = await api.post('/chat', { message: content });
 
       const aiMessage = {
-        id: Date.now() + 1,
         role: 'assistant',
-        content: response.message
+        content: response.message,
+        timestamp: new Date()
       };
 
       setMessages(prev => [...prev, aiMessage]);
     } catch (err) {
       console.error('Chat Error:', err);
-      setError('Failed to send message. Please try again.');
-      // Remove failed message or show error state? For simplicity just show error
-      setMessages(prev => [...prev, {
-        id: Date.now() + 1,
-        role: 'assistant',
-        content: "I'm sorry, I encountered an error providing a response. Please try again later."
-      }]);
+      // Try to extract the specific error message if available
+      setError(err.message || 'Failed to send message. Please try again.');
+
+      // Remove the optimistic user message if failed? 
+      // For now, let's just leave it but maybe show error.
+      // Or we could revert.
     } finally {
       setIsLoading(false);
     }
   };
 
-  const clearMessages = () => {
-    setMessages([{
-      id: 1,
-      role: 'assistant',
-      content: "Hello! I'm your Navigate Assistant. Upload your resume to get started, or ask me any general interview questions."
-    }]);
+  const clearMessages = async () => {
+    try {
+      await api.delete('/chat/history');
+      setMessages([{
+        role: 'assistant',
+        content: "Hello! I'm your Navigate Assistant. Upload your resume to get started, or ask me any general interview questions."
+      }]);
+    } catch (err) {
+      console.error('Failed to clear history:', err);
+      setError('Failed to clear history');
+    }
   };
 
   return (

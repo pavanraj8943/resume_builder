@@ -58,9 +58,13 @@ export function SignUpPage() {
             const { success, error: apiError } = await register(formData.name, formData.email, formData.password);
 
             if (success) {
-                navigate('/');
+                navigate('/login');
             } else {
-                setError(apiError || 'Registration failed');
+                if (apiError === 'User already exists') {
+                    setError('User already exists. Please log in instead.');
+                } else {
+                    setError(apiError || 'Registration failed');
+                }
             }
         } catch (err) {
             setError('An error occurred during registration');

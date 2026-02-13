@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { uploadResume, getResumes, getResume } = require('../controllers/resumeController');
+const { uploadResume, getResumes, getResume, deleteResume, checkAlignment } = require('../controllers/resumeController');
 const { protect } = require('../middleware/auth');
 
 // Setup upload directory
@@ -37,5 +37,8 @@ const upload = multer({
 router.post('/upload', protect, upload.single('resume'), uploadResume);
 router.get('/', protect, getResumes);
 router.get('/:id', protect, getResume);
+router.get('/:id', protect, getResume);
+router.delete('/:id', protect, deleteResume);
+router.post('/alignment', protect, checkAlignment);
 
 module.exports = router;

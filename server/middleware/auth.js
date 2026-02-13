@@ -24,6 +24,10 @@ exports.protect = async (req, res, next) => {
     // Add user to req
     req.user = await User.findById(decoded.id);
 
+    if (!req.user) {
+      return res.status(401).json({ message: 'Not authorized, user not found' });
+    }
+
     next();
   } catch (err) {
     console.error(err);

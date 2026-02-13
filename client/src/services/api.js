@@ -41,5 +41,7 @@ export const api = {
     method: 'POST',
     body: formData,
     credentials: 'include'
-  }).then(handleResponse)
+  }).then(handleResponse),
+  checkAlignment: (targetRole) => api.post('/resume/alignment', { targetRole }),
+  updateProfile: (data) => api.put('/auth/me', data)
 };

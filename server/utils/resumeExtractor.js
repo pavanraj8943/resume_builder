@@ -101,6 +101,21 @@ const extractSummary = (text) => {
   return rawLines.join(' ');
 };
 
+const extractProjects = (text) => {
+  const rawLines = extractSection(text, ['Projects', 'Personal Projects', 'Technical Projects', 'Key Projects'], []);
+
+  if (rawLines.length === 0) return [];
+
+  // improved heuristic: try to find project names (lines with short text)
+  // for now, return a generic block if specific parsing is too risky
+  return [{
+    name: rawLines[0] || 'Project',
+    description: rawLines.slice(1, 6).join(' '),
+    technologies: [],
+    link: ''
+  }];
+};
+
 /**
  * Extracts text and structured data from a resume file
  * @param {string} filePath - Path to the uploaded file
@@ -147,6 +162,7 @@ const extractResumeData = async (filePath, mimeType) => {
   const experience = extractExperience(rawText);
   const education = extractEducation(rawText);
   const summary = extractSummary(rawText);
+  const projects = extractProjects(rawText);
 
   return {
     text: rawText,
@@ -160,7 +176,7 @@ const extractResumeData = async (filePath, mimeType) => {
       skills: skills.length > 0 ? skills : [],
       experience,
       education,
-      projects: [] // TODO: Implement project extraction
+      projects: projects // Included projects
     }
   };
 };

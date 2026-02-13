@@ -9,7 +9,6 @@ export function Sidebar() {
         { id: 'coach', label: 'AI Coach', icon: Target, path: '/coach' },
         { id: 'interview', label: 'Mock Interview', icon: MessageSquare, path: '/interview' },
         { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/analytics' },
-        { id: 'resume', label: 'My Resume', icon: FileText, path: '/resume' },
         { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },
     ];
 

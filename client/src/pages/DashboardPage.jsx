@@ -6,15 +6,44 @@ import { ResumeUpload } from '../components/resume/ResumeUpload';
 import { ResumeParsing } from '../components/resume/ResumeParsing';
 import { ResumePreview } from '../components/resume/ResumePreview';
 import { ChatInterface } from '../components/Chat/ChatInterface';
-import { BarChart3, TrendingUp, CheckCircle2, LogOut, Loader2 } from 'lucide-react';
+import { BarChart3, TrendingUp, CheckCircle2, LogOut, Loader2, Edit2, CheckCircle, XCircle, BrainCircuit } from 'lucide-react';
 import { analyticsService } from '../services/analyticsService';
 
 export function DashboardPage() {
     const navigate = useNavigate();
-    const { user, logout } = useUserContext();
+    const { user, logout, setUser } = useUserContext();
     const [uploadedFile, setUploadedFile] = useState(null);
     const [isParsing, setIsParsing] = useState(false);
     const [parsedData, setParsedData] = useState(null);
+    const [resumeId, setResumeId] = useState(null);
+
+    // Target Role State
+    const [isEditingRole, setIsEditingRole] = useState(false);
+    const [tempRole, setTempRole] = useState('');
+    const [isSavingRole, setIsSavingRole] = useState(false);
+
+    useEffect(() => {
+        const fetchResume = async () => {
+            try {
+                const res = await api.get('/resume');
+                if (res.success && res.data && res.data.length > 0) {
+                    const latestResume = res.data[0];
+                    setParsedData(latestResume.parsed);
+                    setResumeId(latestResume._id);
+                    // Mock file object to trigger view state
+                    setUploadedFile({
+                        name: latestResume.originalName,
+                        filename: latestResume.filename,
+                        size: latestResume.size,
+                        type: latestResume.mimeType
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching resume:', error);
+            }
+        };
+        fetchResume();
+    }, []);
 
     const handleLogout = async () => {
         await logout();
@@ -50,6 +79,7 @@ export function DashboardPage() {
             const data = await api.upload('/resume/upload', formData);
             if (data.success && data.data?.parsed) {
                 setParsedData(data.data.parsed);
+                setResumeId(data.data._id);
             }
         } catch (error) {
             console.error('Error uploading resume:', error);
@@ -59,32 +89,107 @@ export function DashboardPage() {
         }
     };
 
-    const handleDeleteResume = () => {
-        setUploadedFile(null);
-        setParsedData(null);
-        setIsParsing(false);
+    const handleDeleteResume = async () => {
+        if (!resumeId) {
+            setUploadedFile(null);
+            setParsedData(null);
+            setIsParsing(false);
+            return;
+        }
+
+        try {
+            await api.delete(`/resume/${resumeId}`);
+            setUploadedFile(null);
+            setParsedData(null);
+            setParsedData(null);
+            setIsParsing(false);
+            setResumeId(null);
+        } catch (error) {
+            console.error('Error deleting resume:', error);
+        }
     };
 
     const handleParsingComplete = () => {
         setIsParsing(false);
     };
 
+    const handleUpdateRole = async () => {
+        if (!tempRole.trim()) return;
+        setIsSavingRole(true);
+        try {
+            const res = await api.updateProfile({ targetRole: tempRole });
+            if (res.success) {
+                // Update local user context
+                setUser({ ...user, targetRole: res.data.targetRole });
+                setIsEditingRole(false);
+            }
+        } catch (error) {
+            console.error('Failed to update role:', error);
+        } finally {
+            setIsSavingRole(false);
+        }
+    };
+
     return (
         <div className="space-y-6">
             {/* Welcome Section */}
-            <div className="flex items-end justify-between">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-800 transition-colors">Hello, {user?.name || 'User'}!</h1>
                     <p className="text-slate-500 mt-1 transition-colors">Ready to ace your next interview? Here's your progress.</p>
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="hidden sm:flex items-center gap-2 text-sm font-medium text-slate-600 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm transition-colors">
+
+                <div className="flex flex-col items-end gap-3">
+                    <div className="flex items-center gap-2 text-sm font-medium text-slate-600 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm transition-colors">
                         <span>Target Role:</span>
-                        <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{user?.targetRole || 'Not Set'}</span>
+                        {isEditingRole ? (
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="text"
+                                    value={tempRole}
+                                    onChange={(e) => setTempRole(e.target.value)}
+                                    className="border border-slate-300 rounded px-2 py-1 text-xs focus:ring-2 focus:ring-blue-500 outline-none"
+                                    placeholder="e.g. Frontend Developer"
+                                    autoFocus
+                                />
+                                <button
+                                    onClick={handleUpdateRole}
+                                    disabled={isSavingRole}
+                                    className="text-green-600 hover:text-green-700"
+                                >
+                                    <CheckCircle className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => setIsEditingRole(false)}
+                                    className="text-red-500 hover:text-red-600"
+                                >
+                                    <XCircle className="w-4 h-4" />
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <span className={`px-2 py-0.5 rounded ${user?.targetRole ? 'text-blue-600 bg-blue-50' : 'text-slate-400 bg-slate-50 italic'}`}>
+                                    {user?.targetRole || 'Not Set'}
+                                </span>
+                                <button
+                                    onClick={() => {
+                                        setTempRole(user?.targetRole || '');
+                                        setIsEditingRole(true);
+                                    }}
+                                    className="text-slate-400 hover:text-blue-600 transition-colors"
+                                >
+                                    <Edit2 className="w-3 h-3" />
+                                </button>
+                            </div>
+                        )}
                     </div>
+
 
                 </div>
             </div>
+
+            {/* Alignment Analysis Modal/Panel */}
+
 
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -131,6 +236,7 @@ export function DashboardPage() {
                             file={uploadedFile}
                             data={parsedData}
                             onDelete={handleDeleteResume}
+                            resumeId={resumeId}
                         />
                     )}
 

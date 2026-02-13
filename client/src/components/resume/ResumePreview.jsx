@@ -2,12 +2,21 @@ import React from 'react';
 import { FileText, Mail, Phone, Award, Trash2, MapPin, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-export function ResumePreview({ file, data, onDelete }) {
+export function ResumePreview({ file, data, onDelete, resumeId }) {
     const navigate = useNavigate();
+    // Calculate API Root for static file access
+    const API_ROOT = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
 
     // Ensure we have some defaults if data is missing
     const personalInfo = data?.personalInfo || {};
     const skills = data?.skills || [];
+
+    const handleViewPdf = (e) => {
+        e?.stopPropagation();
+        if (file?.filename) {
+            window.open(`${API_ROOT}/uploads/${file.filename}`, '_blank');
+        }
+    };
 
     return (
         <div
@@ -16,8 +25,16 @@ export function ResumePreview({ file, data, onDelete }) {
         >
             <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-blue-500" />
-                    Parsed Profile
+                    <button
+                        onClick={handleViewPdf}
+                        className="p-1 hover:bg-blue-50 rounded-full transition-colors focus:outline-none"
+                        title="View PDF"
+                    >
+                        <FileText className="w-4 h-4 text-blue-500" />
+                    </button>
+                    <span className="truncate max-w-[150px]" title={file?.name}>
+                        {file?.name || 'Resume Preview'}
+                    </span>
                 </h3>
                 <div className="flex items-center gap-2">
                     <button
@@ -113,11 +130,22 @@ export function ResumePreview({ file, data, onDelete }) {
             </div>
 
             {/* Link to start interview */}
-            <div className="p-4 border-t border-slate-100 bg-slate-50 group-hover/card:bg-blue-600 transition-all duration-300">
-                <div className="flex items-center justify-between text-blue-600 group-hover/card:text-white transition-colors">
-                    <span className="text-xs font-bold uppercase tracking-widest">Start Mock Interview</span>
-                    <Globe className="w-4 h-4 animate-pulse" />
-                </div>
+            <div className="p-4 border-t border-slate-100 bg-slate-50 flex gap-3">
+                {resumeId && (
+                    <button
+                        onClick={handleViewPdf}
+                        className="flex-1 py-2 px-3 bg-white border border-slate-200 hover:border-blue-500 hover:text-blue-600 text-slate-600 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-sm"
+                    >
+                        View Full Details
+                    </button>
+                )}
+                <button
+                    onClick={() => navigate('/interview')}
+                    className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-sm flex items-center justify-center gap-2"
+                >
+                    <span>Start Interview</span>
+                    <Globe className="w-3 h-3" />
+                </button>
             </div>
         </div>
     );

@@ -18,7 +18,7 @@ const interviewController = {
       const resume = await Resume.findOne({ user: req.user.id }).sort({ uploadedAt: -1 });
 
       // Generate questions using AI
-      const rawQuestions = await aiService.generateInterviewQuestions(context);
+      const rawQuestions = await aiService.generateInterviewQuestions(context, 5, sessionType);
 
       const session = await InterviewSession.create({
         user: req.user.id,

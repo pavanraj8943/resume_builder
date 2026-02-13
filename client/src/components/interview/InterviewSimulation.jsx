@@ -4,7 +4,7 @@ import { ResponseRecorder } from './ResponseRecorder';
 import { ArrowRight, CheckCircle2, Loader2, Play } from 'lucide-react';
 import { interviewService } from '../../services/interviewService';
 
-export function InterviewSimulation() {
+export function InterviewSimulation({ type = 'mixed', onBack }) {
     const [session, setSession] = useState(null);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [isRecording, setIsRecording] = useState(false);
@@ -18,7 +18,7 @@ export function InterviewSimulation() {
         setIsStarting(true);
         try {
             const response = await interviewService.startSession({
-                sessionType: 'quick-practice',
+                sessionType: type,
                 difficulty: 'mid'
             });
             setSession(response.data);
@@ -85,12 +85,22 @@ export function InterviewSimulation() {
                 <p className="text-slate-500 max-w-md mx-auto mb-8">
                     We'll generate 5 personalized interview questions based on your resume context.
                 </p>
-                <button
-                    onClick={startSession}
-                    className="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-200/50"
-                >
-                    Start Mock Interview
-                </button>
+                <div className="flex gap-4 justify-center">
+                    {onBack && (
+                        <button
+                            onClick={onBack}
+                            className="px-8 py-3 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-all"
+                        >
+                            Change Mode
+                        </button>
+                    )}
+                    <button
+                        onClick={startSession}
+                        className="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-200/50"
+                    >
+                        Start Mock Interview ({type === 'hr' ? 'HR' : type === 'mixed' ? 'Mixed' : type.charAt(0).toUpperCase() + type.slice(1)})
+                    </button>
+                </div>
             </div>
         );
     }
@@ -112,7 +122,7 @@ export function InterviewSimulation() {
                             <div className="flex justify-between items-start mb-2">
                                 <h4 className="font-semibold text-slate-800">Question {idx + 1}</h4>
                                 <span className={`px-2 py-0.5 rounded text-xs font-bold ${evalData.score >= 8 ? 'bg-green-100 text-green-700' :
-                                        evalData.score >= 5 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                                    evalData.score >= 5 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
                                     }`}>
                                     Score: {evalData.score}/10
                                 </span>

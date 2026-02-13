@@ -9,7 +9,7 @@ const chatMessageSchema = new mongoose.Schema({
   resume: {
     type: mongoose.Schema.ObjectId,
     ref: 'Resume',
-    required: true
+    required: false
   },
   coachingMode: {
     type: String,

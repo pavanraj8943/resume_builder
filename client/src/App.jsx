@@ -11,7 +11,10 @@ import { UserProvider } from './context/UserContext';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
+
 import { ChatProvider } from './context/ChatContext';
+
+import { PublicRoute } from './components/common/PublicRoute';
 
 function App() {
 
@@ -19,8 +22,16 @@ function App() {
         <UserProvider>
             <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
                 <Routes>
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/signup" element={<SignUpPage />} />
+                    <Route path="/login" element={
+                        <PublicRoute>
+                            <LoginPage />
+                        </PublicRoute>
+                    } />
+                    <Route path="/signup" element={
+                        <PublicRoute>
+                            <SignUpPage />
+                        </PublicRoute>
+                    } />
                     <Route path="/*" element={
                         <ProtectedRoute>
                             <ChatProvider>
@@ -30,6 +41,7 @@ function App() {
                                         <Route path="/coach" element={<CoachPage />} />
                                         <Route path="/interview" element={<InterviewPage />} />
                                         <Route path="/analytics" element={<AnalyticsPage />} />
+
                                     </Routes>
                                 </Layout>
                             </ChatProvider>

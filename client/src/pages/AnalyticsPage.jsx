@@ -6,6 +6,15 @@ export function AnalyticsPage() {
     const [sessions, setSessions] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const [currentTime, setCurrentTime] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
+
     useEffect(() => {
         const fetchSessions = async () => {
             try {
@@ -20,6 +29,10 @@ export function AnalyticsPage() {
         fetchSessions();
     }, []);
 
+    // Calculate Stats
+    const totalSessions = sessions.length;
+
+    // Calculate Average Score
     const averageScore = sessions.length > 0
         ? (sessions.reduce((acc, s) => {
             const sessionScore = s.questions.reduce((qAcc, q) => qAcc + (q.aiEvaluation?.score || 0), 0) / (s.questions.length || 1);
@@ -27,11 +40,39 @@ export function AnalyticsPage() {
         }, 0) / sessions.length).toFixed(1)
         : 0;
 
+    // Calculate Skills Mastered (Unique strengths count)
+    const skillsMastered = new Set(
+        sessions.flatMap(s =>
+            s.questions.flatMap(q => q.aiEvaluation?.strengths || [])
+        )
+    ).size;
+
+    // Calculate Practice Time (Estimate based on questions if duration missing)
+    // Assuming avg 3 mins per question if duration not tracked
+    const totalMinutes = sessions.reduce((acc, s) => {
+        const sessionDuration = s.questions.reduce((qAcc, q) => qAcc + (q.durationSeconds || 180), 0);
+        return acc + (sessionDuration / 60);
+    }, 0);
+
+    const practiceTimeHours = Math.floor(totalMinutes / 60);
+    const practiceTimeMinutes = Math.round(totalMinutes % 60);
+    const practiceTimeString = `${practiceTimeHours}h ${practiceTimeMinutes}m`;
+
     return (
         <div className="space-y-8">
-            <div>
-                <h1 className="text-2xl font-bold text-slate-800">Performance Analytics</h1>
-                <p className="text-slate-500">Track your progress and identify areas for improvement</p>
+            <div className="flex justify-between items-end">
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-800">Performance Analytics</h1>
+                    <p className="text-slate-500">Track your progress and identify areas for improvement</p>
+                </div>
+                <div className="text-right">
+                    <div className="text-3xl font-mono font-bold text-blue-600">
+                        {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    <div className="text-sm text-slate-400 font-medium">
+                        {currentTime.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
+                    </div>
+                </div>
             </div>
 
             {/* Stats Overview */}
@@ -39,7 +80,7 @@ export function AnalyticsPage() {
                 <StatCard
                     icon={<BarChart3 className="w-5 h-5" />}
                     label="Total Sessions"
-                    value={sessions.length}
+                    value={totalSessions}
                     color="blue"
                 />
                 <StatCard
@@ -51,13 +92,13 @@ export function AnalyticsPage() {
                 <StatCard
                     icon={<Award className="w-5 h-5" />}
                     label="Skills Mastered"
-                    value="12"
+                    value={skillsMastered}
                     color="purple"
                 />
                 <StatCard
                     icon={<Clock className="w-5 h-5" />}
                     label="Practice Time"
-                    value="4.5h"
+                    value={practiceTimeString}
                     color="orange"
                 />
             </div>

@@ -6,9 +6,14 @@ const UserContext = createContext();
 export const useUserContext = () => useContext(UserContext);
 
 export const UserProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() => {
+    const storedUser = localStorage.getItem('user');
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('isAuthenticated') === 'true';
+  });
+  const [loading, setLoading] = useState(!localStorage.getItem('isAuthenticated'));
 
   useEffect(() => {
     checkAuth();
@@ -20,24 +25,35 @@ export const UserProvider = ({ children }) => {
         credentials: 'include'
       });
 
-      if (!res.ok) {
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setUser(data.data);
+          setIsAuthenticated(true);
+          localStorage.setItem('user', JSON.stringify(data.data));
+          localStorage.setItem('isAuthenticated', 'true');
+        } else {
+          // Should rarely happen if res.ok is true but success is false
+          setIsAuthenticated(false);
+          setUser(null);
+          localStorage.removeItem('user');
+          localStorage.removeItem('isAuthenticated');
+        }
+      } else if (res.status === 401 || res.status === 403) {
+        // Explicit auth failure - clear session
         setIsAuthenticated(false);
         setUser(null);
-        return;
-      }
-
-      const data = await res.json();
-      if (data.success) {
-        setUser(data.data);
-        setIsAuthenticated(true);
+        localStorage.removeItem('user');
+        localStorage.removeItem('isAuthenticated');
       } else {
-        setIsAuthenticated(false);
-        setUser(null);
+        // server error or other non-auth error (500, etc)
+        // Keep local state as is to prevent logout on temporary server issues
+        console.error('Server error during auth check:', res.status);
       }
     } catch (err) {
       console.error('Check auth error:', err);
-      setIsAuthenticated(false);
-      setUser(null);
+      // Network error - do NOT clear session
+      // User stays logged in locally until next successful check or explicit 401
     } finally {
       setLoading(false);
     }
@@ -59,6 +75,8 @@ export const UserProvider = ({ children }) => {
       if (res.ok) {
         setUser(data.user);
         setIsAuthenticated(true);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('isAuthenticated', 'true');
         return { success: true };
       } else {
         return { success: false, error: data.message || 'Google login failed' };
@@ -85,6 +103,8 @@ export const UserProvider = ({ children }) => {
       if (res.ok) {
         setUser(data.user);
         setIsAuthenticated(true);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('isAuthenticated', 'true');
         return { success: true };
       } else {
         return { success: false, error: data.message || 'Login failed' };
@@ -109,9 +129,9 @@ export const UserProvider = ({ children }) => {
       const data = await res.json();
 
       if (res.ok) {
-        setUser(data.user);
-        setIsAuthenticated(true);
-        return { success: true };
+        // Do NOT log in automatically.
+        // Redirect logic will be handled by the component.
+        return { success: true, message: data.message };
       } else {
         return { success: false, error: data.message || 'Registration failed' };
       }
@@ -129,6 +149,8 @@ export const UserProvider = ({ children }) => {
       });
       setUser(null);
       setIsAuthenticated(false);
+      localStorage.removeItem('user');
+      localStorage.removeItem('isAuthenticated');
     } catch (err) {
       console.error('Logout failed', err);
     }
